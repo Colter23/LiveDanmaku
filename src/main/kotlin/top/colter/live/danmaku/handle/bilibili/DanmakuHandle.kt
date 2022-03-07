@@ -8,6 +8,7 @@ import top.colter.live.danmaku.data.bilibili.*
 import top.colter.live.danmaku.event.bilibili.DanmuMessageEvent
 import top.colter.live.danmaku.event.bilibili.EnterRoomEvent
 import top.colter.live.danmaku.event.bilibili.FollowLiveEvent
+import top.colter.live.danmaku.event.bilibili.SuperChatEvent
 import top.colter.live.danmaku.event.broadcast
 import top.colter.live.danmaku.utils.decode
 import top.colter.live.danmaku.utils.logger
@@ -66,9 +67,9 @@ fun BiliBiliDanmakuData.messageHandle() {
 private fun BiliBiliDanmakuData.interactWord() {
     val data = data?.decode<InteractData>()
     if (data?.msgType == 1) {
-        EnterRoomEvent(data).broadcast()
+        EnterRoomEvent(data, room!!).broadcast()
     } else if (data?.msgType == 2) {
-        FollowLiveEvent(data).broadcast()
+        FollowLiveEvent(data, room!!).broadcast()
     }
 }
 
@@ -108,12 +109,13 @@ private fun BiliBiliDanmakuData.danmuMsg() {
     )
     val user = User(
         userData[0].jsonPrimitive.long,
-        userData[1].toString(),
+        userData[1].toString().removePrefix("\"").removeSuffix("\""),
         userData[2].jsonPrimitive.int,
         userData[7].toString()
     )
     val fansMedal = if (fansMedalData.isNotEmpty()) FansMedal(
         fansMedalData[3].jsonPrimitive.long,
+        fansMedalData[2].toString(),
         fansMedalData[6].jsonPrimitive.int,
         fansMedalData[0].jsonPrimitive.int,
         fansMedalData[1].toString(),
@@ -124,11 +126,13 @@ private fun BiliBiliDanmakuData.danmuMsg() {
 
     val danmaku = DanmuData(danmuInfo, content, user, fansMedal)
     logger.debug(danmaku.toString())
-    DanmuMessageEvent(danmaku).broadcast()
+    DanmuMessageEvent(danmaku, room!!).broadcast()
 
 }
 
 private fun BiliBiliDanmakuData.superChatMessage() {
+
+    data?.decode<SuperChatData>()?.let { SuperChatEvent(it, room!!).broadcast() }
 
 }
 

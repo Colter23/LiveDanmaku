@@ -51,10 +51,15 @@ data class InteractData(
 @Serializable
 data class FansMedal(
     /**
-     * 粉丝牌直播房间好
+     * 粉丝牌直播房间号
      */
     @SerialName("anchor_roomid")
     val anchorRoomId: Long,
+    /**
+     * 粉丝牌up主
+     */
+    @SerialName("anchor_uname")
+    val anchorUname: String? = null,
     /**
      * 大航海等级
      */
@@ -74,6 +79,5 @@ data class FansMedal(
      * 粉丝牌up主ID
      */
     @SerialName("target_id")
-    val targetId: Long,
-
-    )
+    val targetId: Long
+)

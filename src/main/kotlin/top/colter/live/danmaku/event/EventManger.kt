@@ -1,29 +1,20 @@
 package top.colter.live.danmaku.event
 
 import kotlinx.coroutines.*
-import kotlin.coroutines.CoroutineContext
 
 object EventManger {
-//    CoroutineScope
-//    override val coroutineContext: CoroutineContext = Dispatchers.IO + CoroutineName("EventManger")
 
-    val map: MutableMap<String, MutableList<Listener<Event>>> = mutableMapOf()
+    val eventMap: MutableMap<String, MutableList<Listener<Event>>> = mutableMapOf()
 
     inline fun <reified E : Event> addListener(listener: Listener<Event>) {
-        val e = E::class.simpleName
-        if (map.containsKey(e)) {
-            map[e]?.add(listener)
-        } else {
-            if (e != null) {
-                map[e] = mutableListOf(listener)
-            }
-        }
+        val e = E::class.simpleName?: throw Exception("无法获取事件类型")
+        eventMap.getOrPut(e){ mutableListOf() }.add(listener)
     }
 
     @OptIn(DelicateCoroutinesApi::class)
     inline fun <reified E : Event> broadcast(event: E) {
-        val e = E::class.simpleName
-        map[e]?.forEach {
+        val e = E::class.simpleName?: throw Exception("无法获取事件类型")
+        eventMap[e]?.forEach {
             GlobalScope.launch {
                 it.onMessage(event)
             }

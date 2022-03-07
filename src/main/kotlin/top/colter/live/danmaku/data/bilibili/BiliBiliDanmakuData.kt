@@ -9,6 +9,8 @@ import kotlinx.serialization.json.JsonObject
 data class BiliBiliDanmakuData(
     @SerialName("cmd")
     val cmd: String,
+    @SerialName("room")
+    var room: String? = null,
     @SerialName("data")
     val data: JsonObject? = null,
     @SerialName("info")

@@ -4,21 +4,11 @@ import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.features.websocket.*
 import io.ktor.http.cio.websocket.*
+import kotlinx.coroutines.Job
 
-abstract class WebSocketClient {
+interface WebSocketClient {
 
     var client: HttpClient
-
-    constructor() {
-        this.client = HttpClient {
-            install(WebSockets)
-            BrowserUserAgent()
-        }
-    }
-
-    constructor(client: HttpClient) {
-        this.client = client
-    }
 
     abstract fun getWebSocketUrl(): String
 
@@ -26,8 +16,8 @@ abstract class WebSocketClient {
 
     abstract fun frameHandle(frame: Frame)
 
-    abstract suspend fun connect(roomId: String)
+    abstract fun connect(roomId: String): Job
 
-    abstract fun disconnect()
+    abstract fun disconnect(roomId: String)
 
 }

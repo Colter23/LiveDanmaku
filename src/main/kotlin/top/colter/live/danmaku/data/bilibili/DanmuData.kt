@@ -14,7 +14,7 @@ data class DanmuData(
     @SerialName("fans_medal")
     val fansMedal: FansMedal? = null,
 
-    )
+)
 
 @Serializable
 data class DanmuInfo(

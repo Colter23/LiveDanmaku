@@ -1,5 +1,6 @@
 package top.colter.live.danmaku.ws.bilibili
 
+import io.ktor.client.*
 import io.ktor.client.features.websocket.*
 import io.ktor.http.cio.websocket.*
 import kotlinx.coroutines.*
@@ -11,9 +12,17 @@ import top.colter.live.danmaku.utils.decode
 import top.colter.live.danmaku.utils.logger
 import top.colter.live.danmaku.ws.WebSocketClient
 import java.nio.ByteBuffer
+import kotlin.coroutines.CoroutineContext
 
 
-class BiliBiliWebSocketClient : WebSocketClient() {
+class BiliBiliWebSocketClient(
+    httpClient: HttpClient
+): WebSocketClient,CoroutineScope {
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.IO + CoroutineName("BiliBiliWebSocketClient")
+
+    override var client: HttpClient = httpClient
 
     private val PACKAGE_OFFSET = 0  // 包大小偏移量
     private val HEADER_OFFSET = 4   // 头部大小偏移量
@@ -40,18 +49,19 @@ class BiliBiliWebSocketClient : WebSocketClient() {
 
     override fun getWebSocketUrl(): String = "wss://broadcastlv.chat.bilibili.com:443/sub"
 
-    override suspend fun connect(room: String) {
+    override fun connect(roomId: String): Job = launch {
         client.wss(getWebSocketUrl()) {
-            roomId = room
+            this@BiliBiliWebSocketClient.roomId = roomId
             authHandle()
             heardBeat()
-            while (true) {
+            while (isActive) {
                 frameHandle(incoming.receive())
             }
         }
     }
 
-    override fun disconnect() {
+
+    override fun disconnect(roomId: String) {
         client.close()
     }
 
@@ -66,11 +76,10 @@ class BiliBiliWebSocketClient : WebSocketClient() {
     /**
      * 发送心跳
      */
-    @OptIn(DelicateCoroutinesApi::class)
-    fun DefaultClientWebSocketSession.heardBeat() = GlobalScope.launch(Dispatchers.Unconfined) {
-        while (true) {
+    private fun DefaultClientWebSocketSession.heardBeat() = launch {
+        while (isActive) {
             send(builtPack("", HEART_BEAT_OPERATION))
-            logger.info("发送心跳包")
+            logger.info("$roomId -- 发送心跳包")
             delay(30_000)
         }
     }
@@ -123,17 +132,18 @@ class BiliBiliWebSocketClient : WebSocketClient() {
         when (operation) {
             AUTH_REPLY_OPERATION -> {
                 if (danmakuStr == "{\"code\":0}") {
-                    logger.info("认证成功, 已连接到直播间")
+                    logger.info("$roomId -- 认证成功, 已连接到直播间")
                     return
                 } else {
                     throw AuthException()
                 }
             }
             HEART_BEAT_REPLY_OPERATION -> {
-                logger.info("接收到心跳回复: $danmakuStr")
+                logger.info("$roomId -- 接收到心跳回复: $danmakuStr")
             }
             MESSAGE_OPERATION -> {
                 val danmuku = danmakuStr.decode<BiliBiliDanmakuData>()
+                danmuku.room = roomId
                 danmuku.messageHandle()
             }
         }

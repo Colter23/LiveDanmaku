@@ -1,8 +1,8 @@
 package top.colter.live.danmaku.event.bilibili
 
-import top.colter.live.danmaku.data.bilibili.InteractData
+import top.colter.live.danmaku.data.bilibili.SuperChatData
 import top.colter.live.danmaku.event.AbstractEvent
 
-class EnterRoomEvent(
-    val data: InteractData, source: String
+class SuperChatEvent(
+    val data: SuperChatData, source: String
 ) : AbstractEvent(source)
